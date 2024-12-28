@@ -1,0 +1,277 @@
+@startuml
+
+top to bottom direction
+skinparam linetype ortho
+package Views
+{
+    interface ObserverBoard << interface >> {
+      + updateRangePosition(Board, Player[])
+    }
+    interface ObserverGame << interface >> {
+      + updatePlayerPosition(Board, Player[])
+      + updateScore(Player)
+      + updateCurrentPlayer(Player)
+      + updateGameOver(Player)
+    }
+    class InterfaceSwing <<Class>> implements ObserverBoard, ObserverGame{
+      - TheData : JPanel
+      - RoundNumber : JLabel
+      - TheGame : JPanel
+      + <<Create>> InterfaceSwing():
+      + updateRangePosition(brd : Board,players : Player[])
+      + updateScore(player : Player)
+      + setComponent(TheBoard : Board, TheArrow : MovementArrows, TheData : JPanel, TheCurrentPlayer : CurrentPlayerView, TheScoreBoard : ScoreBoard, TheCurrentTile : CurrentTile)
+      + updateCurrentPlayer(player : Player)
+      + RepaintMain()
+      + updateGameOver(pla : Player)
+      + updatePlayerPosition(brd : Board,players : Player[])
+    }
+    package SwingComponent
+    {
+        class Board <<Class>> {
+          - panels TileSwing[]
+          - parentInterface : InterfaceSwing
+          + <<Create>> Board(parent : InterfaceSwing, aControler : TileControler):
+          + updateBoard(brd : Board, players : Player[]): TileSwing
+        }
+        class CurrentPlayerView <<Class>> {
+          - playerName : JLabel
+          - currentObjectiveTxt : JLabel
+          - currentObjectiveImg : JLabel
+          - buttonNextTurn : JButton
+          + <<Create>> CurrentPlayerView(GameControler):
+          + updateCurrentPlayer(player : Player): void
+        }
+        class CurrentTile <<Class>> {
+          - currentTilePanel: TileSwing
+          - currentTileTxt : JLabel
+          - panelRotate : JButton
+          + <<Create>> CurrentTile(tile : Tile)
+          + setCurrentTilePanel(pnl: TileSwing)
+          + getCurrentTilePanel():TileSwing
+        }
+        class MovementArrows  <<Class>>{
+          + <<Create>> MovementArrows(gmControler : GameControler)
+          - moveCurrentPlayer(Side)
+          + setCurrentPlayer(player : Player)
+        }
+        class ScoreBoard <<Class>> {
+          - title : JPanel
+          - players : JPanel
+          - red : JPanel
+          - blue : JPanel
+          - yellow : JPanel
+          - black : JPanel
+          + <<Create>> ScoreBoard()
+          + updateScore(player : String, score : Integer): void
+        }
+        class TileSwing <<Class>> {
+          - imageLink : String
+          - imageBuffered : BufferedImage
+          - tileLabel : JLabel
+          - playerLabel : JLabel
+          - tileImageLabel : JLabel
+          - tileImage : ImageIcon
+          - objLabel : JLabel
+          + <<Create>> TileSwing():
+          + <<Create>>  TileSwing(tile : Tile, players : Player[])
+          + <<Create>> TileSwing(Tile):
+          + rotateImage(img : BufferedImage): BufferedImage
+          + getTile() : Tile
+        }
+    }
+}
+package Models
+{
+      class Board <<Class>> {
+        + <<Create>> Board()
+        + addObservers(observers: ObserverBoard[])
+        - notifyRangePosition(players: Player[])
+        + getObjectiveList(): Objective[]
+        + getTile(x: Integer, y: Integer): Tile
+        + getTiles(): Tile[][]
+        + moveTile(x: Integer, y: Integer, direction: Side)
+        + moveRange(index: Integer, direction: Side, players: Player[])
+        - generateObjectives(): Objective[]
+        - shuffleObjectives(objectives: Objective[])
+        + getAdditionalTile(): Tile
+        + printBoard()
+      }
+
+    class GameState <<Class>> {
+      - isGameOver: boolean
+      - numberTurn: Integer
+      - additionalTilePlaced: boolean
+      - lastMovedIndex: Integer
+      + <<Create>> GameState(players: Player[], board: Board)
+      - notifyPlayerPosition()
+      - notifyScore()
+      - notifyCurrentPlayer()
+      + addObservers(observers: ObserverGame[])
+      - notifyGameOver(player: Player)
+      + isGameOver(): boolean
+      + getBoard(): Board
+      + getPlayers(): Player[]
+      + getCurrentPlayer(): Player
+      + setCurrentPlayer(currentPlayer: Player)
+      + getNumberTurn(): Integer
+      + nextTurn()
+      + moveRangeGS(index: Integer, direction: Side)
+      - isInverseMove(index: Integer, direction: Side): boolean
+      + movePlayer(player: Player, direction: Side)
+      - checkGameOver(player: Player)
+      - updatePlayerPositions(index: Integer, direction: Side)
+      - getPlayersOnLine(index: Integer, direction: Side): List<Player>
+      - distributeObjectives(players: Player[], objectives: Objective[])
+    }
+    class Objective <<Class>> {
+      - name: String
+      - imgLink: String
+      + <<Create>> Objective(name: String, img: String)
+      + getName(): String
+      + setName(name: String)
+      + getImgLink(): String
+      + setImgLink(imgLink: String)
+    }
+    class Player <<Class>> {
+      - name: String
+      - imgLink: String
+      - positionX: Integer
+      - positionY: Integer
+      - score: Integer
+      + <<Create>> Player(name: String, positionX: Integer, positionY: Integer, image: String)
+      + getName(): String
+      + getCurrentObjective(): Objective
+      + setCurrentObjective(currentObjective: Objective)
+      + getPositionX(): Integer
+      + setPositionX(positionX: Integer)
+      + getPositionY(): Integer
+      + setPositionY(positionY: Integer)
+      + setObjectives(objectives: List<Objective>)
+      + getObjectives(): List<Objective>
+      + getScore(): Integer
+      + setScore(score: Integer)
+      + movePlayer(side: Side)
+      + getImgLink(): String
+    }
+    enum Side {
+      TOP
+      LEFT
+      RIGHT
+      BOTTOM
+    }
+    class Tile <<Class>> {
+      - topBorder: Boolean
+      - bottomBorder: Boolean
+      - rightBorder: Boolean
+      - leftBorder: Boolean
+      - numberOfRotation: Integer
+      - img: String
+      + <<Create>> Tile(top: boolean, bottom: boolean, right: boolean, left: boolean, imgPath: String)
+      + isBorderOpen(border: Side): Boolean
+      + getTileImg(): String
+      + setTileImg(newImgPath: String)
+      + setObjective(anItem: Objective)
+      + getObjective(): Objective
+      + setBorder(border: Side, state: Boolean)
+      + rotateTileOnRight(nb: Integer)
+      + getNumberOfRotation(): Integer
+    }
+    class TileFactory <<Class>> {
+      + <<Create>> TileFactory()
+      + createTileRight(): Tile
+      + createTileCorner(): Tile
+      + createTileT(): Tile
+      + loadImage(path: String): BufferedImage
+    }
+}
+package Controlers
+{
+    class GameControler <<Class>> {
+      + <<Create>> GameControler(gm: GameState)
+      + makeMove(currentPlayer: Player, direction: Side)
+      + nextTurn()
+      + checkGameOver(): Boolean
+    }
+    class TileControler <<Class>> {
+      + rotateTile(tile: Tile, times: Integer)
+      + setGameState(gms: GameState)
+      + moveRangeOnBoard(index: Integer, direction: Side)
+    }
+}
+
+
+class Main {
+  + Main():
+  + main(String[]): void
+}
+
+
+Views.SwingComponent.Board             "1" *-[#595959,plain]-> "parentInterface\n1" InterfaceSwing
+Models.Board             "1" *-[#595959,plain]-> "objectiveList\n*" Objective
+Models.Board              -[#595959,dashed]->  Objective         : "«create»"
+Models.Board             "1" *-[#595959,plain]-> "observers\n*" ObserverBoard
+Models.Board              -[#595959,dashed]->  Player            : "«create»"
+Models.Board              -[#595959,dashed]->  Tile              : "«create»"
+Models.Board             "1" *-[#595959,plain]-> "tiles\n*" Tile
+Models.Board             "1" *-[#595959,plain]-> "additionalTile\n1" Tile
+
+Views.SwingComponent.Board             "1" *-[#595959,plain]-> "tlCtrl\n1" TileControler
+Views.SwingComponent.Board             "1" *-[#595959,plain]-> "panels\n*" TileSwing
+Views.SwingComponent.Board              -[#595959,dashed]->  TileSwing         : "«create»"
+CurrentPlayerView "1" *-[#595959,plain]-> "gameControler\n1" GameControler
+CurrentTile       "1" *-[#595959,plain]-> "currentTilePanel\n1" TileSwing
+CurrentTile        -[#595959,dashed]->  TileSwing         : "«create»"
+GameControler     "1" *-[#595959,plain]-> "gameState\n1" GameState
+GameState         "1" *-[#595959,plain]-> "board\n1" Models.Board
+GameState         "1" *-[#595959,plain]-> "observers\n*" ObserverGame
+GameState         "1" *-[#595959,plain]-> "players\n*" Player
+GameState         "1" *-[#595959,plain]-> "currentPlayer\n1" Player
+GameState         "1" *-[#595959,plain]-> "lastMovedDirection\n1" Side
+InterfaceSwing    "1" *-[#595959,plain]-> "TheBoard\n1" Views.SwingComponent.Board
+InterfaceSwing    "1" *-[#595959,plain]-> "TheCurrentPlayer\n1" CurrentPlayerView
+InterfaceSwing    "1" *-[#595959,plain]-> "TheCurrentTile\n1" CurrentTile
+InterfaceSwing    "1" *-[#595959,plain]-> "TheArrow\n1" MovementArrows
+InterfaceSwing     -[#008200,dashed]-^  ObserverBoard
+InterfaceSwing     -[#008200,dashed]-^  ObserverGame
+InterfaceSwing    "1" *-[#595959,plain]-> "TheScoreBoard\n1" ScoreBoard
+Main               -[#595959,dashed]->  Models.Board      : "«create»"
+Main               -[#595959,dashed]->  Views.SwingComponent.Board: "«create»"
+Main               -[#595959,dashed]->  CurrentPlayerView : "«create»"
+Main               -[#595959,dashed]->  CurrentTile       : "«create»"
+Main               -[#595959,dashed]->  GameControler     : "«create»"
+Main               -[#595959,dashed]->  GameState         : "«create»"
+Main               -[#595959,dashed]->  InterfaceSwing    : "«create»"
+Main               -[#595959,dashed]->  MovementArrows    : "«create»"
+Main               -[#595959,dashed]->  ObserverBoard     : "«create»"
+Main               -[#595959,dashed]->  ObserverGame      : "«create»"
+Main               -[#595959,dashed]->  Player            : "«create»"
+Main               -[#595959,dashed]->  ScoreBoard        : "«create»"
+Main               -[#595959,dashed]->  TileControler     : "«create»"
+Main               -[#595959,dashed]->  TileSwing         : "«create»"
+MovementArrows    "1" *-[#595959,plain]-> "gmControler\n1" GameControler
+MovementArrows    "1" *-[#595959,plain]-> "currentPlayer\n1" Player
+Player            "1" *-[#595959,plain]-> "objectives\n*" Objective
+Player            "1" *-[#595959,plain]-> "currentObjective\n1" Objective
+Tile              "1" *-[#595959,plain]-> "item\n1" Objective
+TileControler     "1" *-[#595959,plain]-> "gameState\n1" GameState
+TileFactory        -[#595959,dashed]->  Tile              : "«create»"
+TileSwing         "1" *-[#595959,plain]-> "tile\n1" Tile
+
+InterfaceSwing    -[#595959,dashed]->  Models.Board      : "«uses»"
+InterfaceSwing    -[#595959,dashed]->  Player            : "«uses»"
+Models.Board      -[#595959,dashed]->  Tile              : "«uses»"
+Models.Board      -[#595959,dashed]->  Objective         : "«uses»"
+GameState         -[#595959,dashed]->  Models.Board      : "«uses»"
+GameState         -[#595959,dashed]->  Player            : "«uses»"
+GameState         -[#595959,dashed]->  Side              : "«uses»"
+GameControler     -[#595959,dashed]->  GameState         : "«uses»"
+TileControler     -[#595959,dashed]->  GameState         : "«uses»"
+TileSwing         -[#595959,dashed]->  Tile              : "«uses»"
+TileSwing         -[#595959,dashed]->  Player            : "«uses»"
+CurrentPlayerView -[#595959,dashed]->  Player            : "«uses»"
+CurrentTile       -[#595959,dashed]->  Tile              : "«uses»"
+MovementArrows    -[#595959,dashed]->  Player            : "«uses»"
+ScoreBoard        -[#595959,dashed]->  Player            : "«uses»"
+TileFactory       -[#595959,dashed]->  Tile              : "«uses»"
+@enduml
